@@ -324,7 +324,7 @@ function osd_disk {
   # properly. It seems to be some sort of timing issues.
   # We have not found the source yet but sleeping before starting
   # the osd process seems to fix the issue.
-  sleep 3
+  sleep 5
   killall -9 -w ceph-osd
   rm -f /var/run/ceph/ceph-osd.${OSD_ID}.asok
   exec /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
@@ -347,7 +347,7 @@ function osd_activate {
   OSD_WEIGHT=$(df -P -k /var/lib/ceph/osd/${CLUSTER}-$OSD_ID/ | tail -1 | awk '{ d= $2/1073741824 ; r = sprintf("%.2f", d); print r }')
   ceph ${CEPH_OPTS} --name=osd.${OSD_ID} --keyring=/var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd crush create-or-move -- ${OSD_ID} ${OSD_WEIGHT} ${CRUSH_LOCATION}
 
-  sleep 3
+  sleep 5
   killall -9 -w ceph-osd
   rm -f /var/run/ceph/ceph-osd.${OSD_ID}.asok
   exec /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
