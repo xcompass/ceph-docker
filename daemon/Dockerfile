@@ -19,6 +19,9 @@ ADD config.*.sh /
 ADD ./confd/templates/* /etc/confd/templates/
 ADD ./confd/conf.d/* /etc/confd/conf.d/
 
+# ceph defaults key/values for KV store
+ADD ceph.defaults /
+
 # Add volumes for Ceph config and data
 VOLUME ["/etc/ceph","/var/lib/ceph"]
 
