@@ -313,7 +313,7 @@ function osd_disk {
     ceph-disk -v prepare ${OSD_DEVICE}
   fi
 
-  ceph-disk -v activate ${OSD_DEVICE}1
+  ceph-disk -v activate  --mark-init none ${OSD_DEVICE}1
   OSD_ID=$(cat /var/lib/ceph/osd/$(ls -ltr /var/lib/ceph/osd/ | tail -n1 | awk -v pattern="$CLUSTER" '$0 ~ pattern {print $9}')/whoami)
   OSD_WEIGHT=$(df -P -k /var/lib/ceph/osd/${CLUSTER}-$OSD_ID/ | tail -1 | awk '{ d= $2/1073741824 ; r = sprintf("%.2f", d); print r }')
   ceph ${CEPH_OPTS} --name=osd.${OSD_ID} --keyring=/var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd crush create-or-move -- ${OSD_ID} ${OSD_WEIGHT} ${CRUSH_LOCATION}
@@ -324,17 +324,10 @@ function osd_disk {
   # properly. It seems to be some sort of timing issues.
   # We have not found the source yet but sleeping before starting
   # the osd process seems to fix the issue.
-  sleep 5
-
-  # ceph-disk activiate has exec'ed /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
-  # wait till docker stop or ceph-osd is killed
-  OSD_PID=$(ps -ef |grep ceph-osd |grep osd.${OSD_ID} |awk '{print $2}')
-  if [ -n "${OSD_PID}" ]; then
-      echo "OSD (PID ${OSD_PID}) is running, waiting till it exits"
-      while [ -e /proc/${OSD_PID} ]; do sleep 1;done
-  else
-      exec /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
-  fi
+  sleep 3
+  killall -9 -w ceph-osd
+  rm -f /var/run/ceph/ceph-osd.${OSD_ID}.asok
+  exec /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
 }
 
 
@@ -349,20 +342,15 @@ function osd_activate {
   fi
 
   mkdir -p /var/lib/ceph/osd
-  ceph-disk -v activate ${OSD_DEVICE}1
+  ceph-disk -v activate  --mark-init none ${OSD_DEVICE}1
   OSD_ID=$(cat /var/lib/ceph/osd/$(ls -ltr /var/lib/ceph/osd/ | tail -n1 | awk -v pattern="$CLUSTER" '$0 ~ pattern {print $9}')/whoami)
   OSD_WEIGHT=$(df -P -k /var/lib/ceph/osd/${CLUSTER}-$OSD_ID/ | tail -1 | awk '{ d= $2/1073741824 ; r = sprintf("%.2f", d); print r }')
   ceph ${CEPH_OPTS} --name=osd.${OSD_ID} --keyring=/var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd crush create-or-move -- ${OSD_ID} ${OSD_WEIGHT} ${CRUSH_LOCATION}
 
-  # ceph-disk activiate has exec'ed /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
-  # wait till docker stop or ceph-osd is killed
-  OSD_PID=$(ps -ef |grep ceph-osd |grep osd.${OSD_ID} |awk '{print $2}')
-  if [ -n "${OSD_PID}" ]; then
-      echo "OSD (PID ${OSD_PID}) is running, waiting till it exits"
-      while [ -e /proc/${OSD_PID} ]; do sleep 1;done
-  else
-      exec /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
-  fi
+  sleep 3
+  killall -9 -w ceph-osd
+  rm -f /var/run/ceph/ceph-osd.${OSD_ID}.asok
+  exec /usr/bin/ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID}
 }
 
 #######
