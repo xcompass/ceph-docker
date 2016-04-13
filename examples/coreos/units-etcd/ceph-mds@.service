@@ -25,3 +25,4 @@ TimeoutStopSec=15
 ; than one runs on any given machines
 [X-Fleet]
 Conflicts=ceph-mds@*.service
+MachineMetadata="app=ceph"
